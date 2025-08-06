@@ -1,0 +1,10 @@
+.idea/
+.vscode/
+summaries/
+bin/
+*.log
+backups/
+.DS_Store
+test-data/
+.counters/
+analysis/
