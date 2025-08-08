@@ -7,6 +7,8 @@ import (
 
 // RUNTIME CONTROL
 var (
+	UseMagic bool = true
+
 	// UseLogger controls whether or not the env package will use OutLogger or ErrLogger to report problems
 	UseLogger bool
 

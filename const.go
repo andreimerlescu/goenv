@@ -1,6 +1,13 @@
 package env
 
+import "log"
+
 const (
+	packageName string = " ${env.git} "
+
+	// LogFlags allows you to define the flags on log.New() for UseLogger's ErrLogger and OutLogger
+	LogFlags int = log.Ldate | log.Ltime | log.Lshortfile
+
 	// AmGoEnvMapSeparator allows you to define the default separator used for map items. Default is ","
 	AmGoEnvMapSeparator string = "AM_GO_ENV_MAP_SEPARATOR"
 

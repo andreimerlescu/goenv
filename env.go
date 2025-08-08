@@ -1,8 +1,8 @@
 package env
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/user"
 	"strconv"
@@ -10,123 +10,79 @@ import (
 	"time"
 )
 
-func init() {
-	UseLogger = Bool(AmGoEnvAlwaysUseLogger, false)
-	AllowPanic = Bool(AmGoEnvAlwaysAllowPanic, true)
-	PanicNoUser = Bool(AmGoEnvPanicNoUser, AllowPanic)
-	PrintErrors = Bool(AmGoEnvAlwaysPrintErrors, UseLogger)
-	EnableVerboseLogging = Bool(AmGoEnvEnableVerboseLogging, false)
-
-	OutLogger = log.New(os.Stdout, "INFO: ${env.git} ", log.Ldate|log.Ltime|log.Lshortfile)
-	ErrLogger = log.New(os.Stderr, " ERR: ${env.git} ", log.Ldate|log.Ltime|log.Lshortfile)
-
-	ShowVerbose = UseLogger && EnableVerboseLogging
-
-	Float64BitSize = Int(AmGoEnvFloat64BitSize, 64)
-	Float32BitSize = Int(AmGoEnvFloat32BitSize, 32)
-	ListSeparator = String(AmGoEnvListSeparator, ",")
-	DurationBase = Int(AmGoEnvDurationBase, 10)
-	DurationBitSize = Int(AmGoEnvDurationBitSize, 64)
-	MapSeparator = String(AmGoEnvMapSeparator, ",")
-	MapItemSeparator = String(AmGoEnvMapItemSeparator, "=")
-	MapSplitN = Int(AmGoEnvMapSplitN, 2)
-	UnitDurationBase = Int(AmGoEnvUnitDurationBase, 10)
-	UnitDurationBitSize = Int(AmGoEnvUnitDurationBitSize, 64)
-	Int64Base = Int(AmGoEnvInt64Base, 10)
-	Int64BitSize = Int(AmGoEnvInt64BitSize, 64)
-
-	ZeroList = make([]string, 0)
-	ZeroMap = make(map[string]string)
-}
-
 // ** EXISTENCE **
 
-// Exists allows you to use an ENV such as "HOSTNAME=localhost" and check if it exists
+// Exists checks if an environment variable is set.
 //
 // Example:
-// 		ok := env.Exists("HOSTNAME")
+//     ok := env.Exists("HOSTNAME")
 func Exists(env string) (ok bool) {
 	_, ok = os.LookupEnv(env)
 	if !ok && ShowVerbose {
-		OutLogger.Printf("Exits(%s) = %v", env, ok)
+		OutLogger.Printf("Exists(%s) = %v", env, ok)
 	}
 	return
 }
 
-// MustExist throws a panic if the env is not found
+// MustExist panics or exits if an environment variable is not set.
+// The behavior is controlled by the AllowPanic and PrintErrors global variables.
 //
 // Example:
-// 		// os.Environ[1] => "HOSTNAME="
-// 		func init() {
-//			env.MustExists("HOSTNAME")
-// 		}
-// 		func main() {
-// 			hostname := env.String("HOSTNAME", "")
-// 			if hostname == "" {
-// 				// hostname is set, but its an empty string
-// 			}
-// 		}
+//     func init() {
+//        env.MustExist("REQUIRED_VAR")
+//     }
 func MustExist(env string) {
-	_, ok := os.LookupEnv(env)
-	if !ok {
+	if _, ok := os.LookupEnv(env); !ok {
+		msg := fmt.Sprintf("required environment variable '%s' is not set", env)
 		if AllowPanic {
-			panic(fmt.Sprintf("MustExist() failed because %s was not found", env))
+			panic(msg)
 		}
-		if PrintErrors {
-			msg := fmt.Sprintf("MustExist() failed because environment variable %s was not found", env)
-			if UseLogger {
-				ErrLogger.Fatal(msg)
-			} else {
-				_, _ = fmt.Fprintln(os.Stderr, msg)
-				os.Exit(1)
-			}
-		}
+		logError(env, errors.New(msg))
+		os.Exit(1)
 	}
-	if EnableVerboseLogging {
-		OutLogger.Printf("MustExist() has found %s!", env)
+	if ShowVerbose {
+		OutLogger.Printf("MustExist() confirmed %s exists!", env)
 	}
 }
 
 // ** TRUTHY **
 
-// IsFalse verifies that Bool is false
+// IsFalse returns true if an environment variable is "false" or is not set.
 //
 // Example:
-// 		if env.IsFalse("USE_JSON") {
-// 			fmt.Println("Not using JSON.")
-// 		} else {
-//			// intend to use json
-// 		}
+//     if env.IsFalse("USE_JSON") {
+//        fmt.Println("Not using JSON.")
+//     }
 func IsFalse(env string) (ok bool) {
-	ok = !Bool(env, false) == false
-	if !ok && ShowVerbose {
+	// If the value is "true", Bool(env, false) will be true, so we return false.
+	// If the value is "false" or unset, Bool(env, false) will be false, so we return true.
+	ok = !Bool(env, false)
+	if ShowVerbose {
 		OutLogger.Printf("IsFalse(%s) = %v", env, ok)
 	}
 	return
 }
 
-// IsTrue verifies that Bool is true
+// IsTrue returns true only if an environment variable is explicitly "true".
 //
 // Example:
-// 		if env.IsTrue("USE_JSON") {
-//			// intend to use json
-// 		} else {
-// 			fmt.Println("Not using JSON.")
-// 		}
+//     if env.IsTrue("USE_JSON") {
+//        // intend to use json
+//     }
 func IsTrue(env string) (ok bool) {
-	ok = Bool(env, false) == true
-	if !ok && ShowVerbose {
+	ok = Bool(env, false)
+	if ShowVerbose {
 		OutLogger.Printf("IsTrue(%s) = %v", env, ok)
 	}
 	return
 }
 
-// AreTrue verifies a list of ENV variables and runs IsTrue to verify all are true
+// AreTrue returns true only if all specified environment variables are true.
 //
 // Example:
-// 		if env.AreTrue("ALWAYS_PRINT", "USE_JSON") {
-// 			// intend to print to STDOUT in JSON format
-// 		}
+//     if env.AreTrue("ENABLED", "FEATURE_X_ON") {
+//        // ...
+//     }
 func AreTrue(envs ...string) (ok bool) {
 	for _, env := range envs {
 		if !IsTrue(env) {
@@ -139,12 +95,12 @@ func AreTrue(envs ...string) (ok bool) {
 	return true
 }
 
-// AreFalse verifies a list of ENV variables and runs IsFalse to verify all are false
+// AreFalse returns true only if all specified environment variables are false or unset.
 //
 // Example:
-// 		if env.AreFalse("NEVER_SAVE", "NEVER_OVERWRITE") {
-// 			// act accordingly
-// 		}
+//     if env.AreFalse("DISABLED", "LEGACY_MODE") {
+//        // ...
+//     }
 func AreFalse(envs ...string) (ok bool) {
 	for _, env := range envs {
 		if !IsFalse(env) {
@@ -157,11 +113,12 @@ func AreFalse(envs ...string) (ok bool) {
 	return true
 }
 
-// Bool allows you to use an ENV to store a string "true" and "false" to parse as a bool
+// Bool parses an environment variable as a boolean.
+// It accepts "true", "t", "1" as true and "false", "f", "0" as false.
+// If the variable is unset or fails to parse, it returns the fallback value.
 //
 // Example:
-// 		useJson := env.Bool("USE_JSON", false)
-// 		# when no USE_JSON set, useJson is false
+//     useJson := env.Bool("USE_JSON", false)
 func Bool(env string, fallback bool) bool {
 	v, ok := os.LookupEnv(env)
 	if !ok {
@@ -169,13 +126,7 @@ func Bool(env string, fallback bool) bool {
 	}
 	vb, err := strconv.ParseBool(v)
 	if err != nil {
-		if PrintErrors {
-			if UseLogger {
-				ErrLogger.Printf("Bool(%s) strconv.ParseBool(%s) threw err: %v", env, v, err)
-			} else {
-				fmt.Printf("Bool(%s) strconv.ParseBool(%s) threw err: %v", env, v, err)
-			}
-		}
+		logError(env, err)
 		return fallback
 	}
 	return vb
@@ -183,15 +134,10 @@ func Bool(env string, fallback bool) bool {
 
 // ** TYPES **
 
-// String retries a string value from an ENV name with a fallback value when not defined
+// String gets a string value from an environment variable, or a fallback if not set.
 //
 // Example:
-// 		hostname := env.String("HOSTNAME", "localhost")
-// 		if strings.EqualFold(hostname, "localhost") {
-// 			// localhost
-// 		} else {
-// 			// not localhost
-// 		}
+//     hostname := env.String("HOSTNAME", "localhost")
 func String(env string, fallback string) string {
 	v, ok := os.LookupEnv(env)
 	if !ok {
@@ -200,13 +146,10 @@ func String(env string, fallback string) string {
 	return v
 }
 
-// Int retrieves an int value from an ENV name with a fallback int value when not defined
+// Int gets an integer value from an environment variable, or a fallback if not set or invalid.
 //
 // Example:
-// 		port := env.Int("PORT", 3306)
-// 		if port < 1 || port > 65534 {
-// 			panic("port out of range")
-// 		}
+//     port := env.Int("PORT", 3306)
 func Int(env string, fallback int) int {
 	v, ok := os.LookupEnv(env)
 	if !ok {
@@ -214,22 +157,16 @@ func Int(env string, fallback int) int {
 	}
 	vint, err := strconv.Atoi(v)
 	if err != nil {
-		if PrintErrors {
-			if UseLogger {
-				ErrLogger.Printf("Int(%s) failed due to: %s", env, err.Error())
-			} else {
-				fmt.Printf("Int(%s) failed due to: %s", env, err.Error())
-			}
-		}
+		logError(env, err)
 		return fallback
 	}
 	return vint
 }
 
-// Int64 retrieves an int64 value from an ENV name with a fallback value if not defined or has an error
+// Int64 gets an int64 value from an environment variable, or a fallback if not set or invalid.
 //
-// Example
-// 		ns := env.Int64("NANOSECONDS", int64(1_000_000_000))
+// Example:
+//     ns := env.Int64("NANOSECONDS", int64(1_000_000_000))
 func Int64(env string, fallback int64) int64 {
 	v, ok := os.LookupEnv(env)
 	if !ok {
@@ -237,22 +174,16 @@ func Int64(env string, fallback int64) int64 {
 	}
 	vint, err := strconv.ParseInt(v, Int64Base, Int64BitSize)
 	if err != nil {
-		if PrintErrors {
-			if UseLogger {
-				OutLogger.Printf("Int64(%s) failed due to: %s", env, err.Error())
-			} else {
-				fmt.Printf("Int64(%s) failed due to: %s", env, err.Error())
-			}
-		}
+		logError(env, err)
 		return fallback
 	}
-	return int64(vint)
+	return vint
 }
 
-// Float32 retrieves a float32 value from an ENV name with a fallback value if undefined or has an error
+// Float32 gets a float32 value from an environment variable, or a fallback if not set or invalid.
 //
 // Example:
-// 		pi := env.Float32("PI", float32(3.14))
+//     pi := env.Float32("PI", float32(3.14))
 func Float32(env string, fallback float32) float32 {
 	v, ok := os.LookupEnv(env)
 	if !ok {
@@ -260,22 +191,16 @@ func Float32(env string, fallback float32) float32 {
 	}
 	vf, err := strconv.ParseFloat(v, Float32BitSize)
 	if err != nil {
-		if PrintErrors {
-			if UseLogger {
-				ErrLogger.Printf("Float32(%s) failed due to %s", env, err.Error())
-			} else {
-				fmt.Printf("Float32(%s) failed due to %s", env, err.Error())
-			}
-		}
+		logError(env, err)
 		return fallback
 	}
 	return float32(vf)
 }
 
-// Float64 retrieves a float64 value from an ENV name with a fallback value if undefined or has an error
+// Float64 gets a float64 value from an environment variable, or a fallback if not set or invalid.
 //
 // Example:
-// 		pi := env.Float64("PI", float64(3.14))
+//     pi := env.Float64("PI", float64(3.14))
 func Float64(env string, fallback float64) float64 {
 	v, ok := os.LookupEnv(env)
 	if !ok {
@@ -283,89 +208,66 @@ func Float64(env string, fallback float64) float64 {
 	}
 	vf, err := strconv.ParseFloat(v, Float64BitSize)
 	if err != nil {
-		if PrintErrors {
-			if UseLogger {
-				ErrLogger.Printf("Float64(%s) failed due to: %s", env, err.Error())
-			} else {
-				fmt.Printf("Float64(%s) failed due to: %s", env, err.Error())
-			}
-		}
+		logError(env, err)
 		return fallback
 	}
 	return vf
 }
 
-// Duration interacts with time.Duration to allow an ENV var to be set to a value of such or return a fallback
+// Duration parses an environment variable as a time.Duration. It can parse duration
+// strings like "300ms", "1.5h" or an integer number of nanoseconds.
 //
 // Example:
-// 		ns := env.Duration("NANOSECONDS", 3*time.Nanosecond)
-// 		if ns > time.Hour {
-// 			panic("cant exceed an hour")
-// 		}
+//     timeout := env.Duration("TIMEOUT", 5*time.Second)
 func Duration(env string, fallback time.Duration) time.Duration {
 	v, ok := os.LookupEnv(env)
 	if !ok {
 		return fallback
 	}
-	d, err := time.ParseDuration(v)
-	if err == nil {
+	// First, try to parse as a duration string like "10s"
+	if d, err := time.ParseDuration(v); err == nil {
 		return d
 	}
+	// If that fails, try to parse as an integer (nanoseconds)
 	vf, err := strconv.ParseInt(v, DurationBase, DurationBitSize)
 	if err != nil {
-		if PrintErrors {
-			if UseLogger {
-				ErrLogger.Printf("Duration(%s) failed due to %s", env, err.Error())
-			} else {
-				fmt.Printf("Duration(%s) failed due to %s", env, err.Error())
-			}
-		}
+		logError(env, err)
 		return fallback
 	}
 	return time.Duration(vf)
 }
 
-// UnitDuration takes Duration to a scalar of unit time.Duration
+// UnitDuration parses an environment variable as a number and multiplies it by the given unit.
+// It can also parse full duration strings like "1h30m", in which case the unit is ignored.
+// NOTE: The value of the env **AND** the fallback will be multiplied by the unit variable.
 //
 // Example:
-// 		seconds := env.UnitDuration("SECONDS", 3*time.Second, time.Second)
-// 		# setting ENV of SECONDS=3 will return time.Duration(3*time.Second) result
-// 		if seconds > time.Hour {
-// 			panic("cannot exceed an hour")
-// 		}
+//     # TIMEOUT=10 will result in 10 * time.Second
+//     timeout := env.UnitDuration("TIMEOUT", 5, time.Second)
 func UnitDuration(env string, fallback, unit time.Duration) time.Duration {
 	v, ok := os.LookupEnv(env)
 	if !ok {
 		return fallback * unit
 	}
-	d, err := time.ParseDuration(v)
-	if err == nil {
+	// First, try to parse as a full duration string (e.g., "1h30m"). If so, the unit is ignored.
+	if d, err := time.ParseDuration(v); err == nil {
 		return d * unit
 	}
+	// If not, parse as a number and apply the unit.
 	vf, err := strconv.ParseInt(v, UnitDurationBase, UnitDurationBitSize)
 	if err != nil {
-		if PrintErrors {
-			if UseLogger {
-				ErrLogger.Printf("UnitDuration(%s) failed due to %s", env, err.Error())
-			} else {
-				fmt.Printf("UnitDuration(%s) failed due to %s", env, err.Error())
-			}
-		}
+		logError(env, err)
 		return fallback * unit
 	}
 	return time.Duration(vf) * unit
 }
 
-// List allows you to get a []string from a comma separated list stored in an ENV
+// List parses a delimited string from an environment variable into a []string.
+// The delimiter is configured by the global `ListSeparator` variable.
 //
 // Example:
-// 		aliases := env.List("ALIASES", []string{})
-// 		# store as ALIASES as "dog,canine,beast,creature"
-// 		if len(aliases) > 0 {
-// 			for _, a := range aliases {
-//				fmt.Println(a)
-// 			}
-// 		}
+//     # With ENV TAGS="go,docker,linux"
+//     tags := env.List("TAGS", []string{})
 func List(env string, fallback []string) []string {
 	v, ok := os.LookupEnv(env)
 	if !ok {
@@ -379,35 +281,19 @@ func List(env string, fallback []string) []string {
 			list = append(list, part)
 		}
 	}
-	ll, lp := len(list), len(parts)
-	if ll == 0 && lp > 0 && ShowVerbose {
-		OutLogger.Printf("List(%s) has %d items, needs %d items", env, ll, lp)
+	if len(list) == 0 && len(parts) > 0 && ShowVerbose {
+		OutLogger.Printf("List(%s) parsed %d parts but found 0 non-empty items", env, len(parts))
 	}
 	return list
 }
 
-// Map allows you to store a comma separated list of key=value pairs in an ENV with a fallback
+// Map parses a delimited string from an env var into a map[string]string.
+// Delimiters are configured by `MapSeparator` and `MapItemSeparator`.
 //
 // Example:
-// 		tags := env.Map("TAGS",
-//			map[string]string{
-//				"Environment", env.String("ENVIRONMENT", "dev",
-//			)})
+//     # With ENV DATA="key1=val1,key2=val2"
+//     data := env.Map("DATA", env.ZeroMap)
 func Map(env string, fallback map[string]string) map[string]string {
-	defer func() {
-		if r := recover(); r != nil {
-			if AllowPanic {
-				panic(r)
-			}
-			if PrintErrors {
-				if UseLogger {
-					ErrLogger.Printf("Map(%s) failed due to %v", env, r)
-				} else {
-					_, _ = fmt.Fprintf(os.Stderr, "Map(%s) failed due to %v", env, r)
-				}
-			}
-		}
-	}()
 	v, ok := os.LookupEnv(env)
 	if !ok {
 		return fallback
@@ -415,7 +301,8 @@ func Map(env string, fallback map[string]string) map[string]string {
 	parts := strings.Split(v, MapSeparator)
 	result := make(map[string]string, len(parts))
 	for _, part := range parts {
-		pieces := strings.SplitN(strings.TrimSpace(part), MapItemSeparator, MapSplitN)
+		part = strings.TrimSpace(part)
+		pieces := strings.SplitN(part, MapItemSeparator, MapSplitN)
 		if len(pieces) == 2 {
 			key := strings.TrimSpace(pieces[0])
 			value := strings.TrimSpace(pieces[1])
@@ -430,43 +317,36 @@ func Map(env string, fallback map[string]string) map[string]string {
 	return result
 }
 
-// ** CONTROL DATA **
+// ** DATA VALIDATION **
 
-// ListContains uses strings.EqualFold on the elements in the list to check contains
+// ListContains checks if a list parsed from an env var contains a specific string (case-insensitive).
 //
 // Example:
-// 		if env.ListContains("HOSTS", []string{}, "localhost:27017") {
-// 			fmt.Println("MongoDB")
-// 		}
+//     if env.ListContains("FEATURES", env.ZeroList, "beta") {
+//        // ...
+//     }
 func ListContains(env string, fallback []string, contains string) (ok bool) {
 	L := List(env, fallback)
-	defer func() {
-		if !ok && ShowVerbose {
-			OutLogger.Printf("ListContains(%s) '%s' = %v", env, contains, ok)
-		}
-	}()
 	for _, l := range L {
 		if strings.EqualFold(l, contains) {
 			ok = true
-			return
+			break
 		}
 	}
-	ok = false
 	if !ok && ShowVerbose {
-		OutLogger.Printf("ListContains(%s) '%s' = %v", env, contains, ok)
+		OutLogger.Printf("ListContains(%s): '%s' not found in list. = %v", env, contains, ok)
 	}
 	return
 }
 
-// ListIsLength uses <= on the length against the length of the list by env name
+// ListIsLength checks if a list parsed from an env var has a specific length.
 //
 // Example:
-// 		if !env.ListIsLength("HOSTS", []string{}, 3) {
-// 			panic("env HOSTS must have 3 items inside it")
-// 		}
+//     if !env.ListIsLength("HOSTS", env.ZeroList, 3) {
+//        panic("env HOSTS must have exactly 3 items")
+//     }
 func ListIsLength(env string, fallback []string, wantLength int) (ok bool) {
-	i := List(env, fallback)
-	length := len(i)
+	length := ListLength(env, fallback)
 	ok = length == wantLength
 	if !ok && ShowVerbose {
 		OutLogger.Printf("ListIsLength(%s) got = %d; want %d", env, length, wantLength)
@@ -474,23 +354,22 @@ func ListIsLength(env string, fallback []string, wantLength int) (ok bool) {
 	return
 }
 
-// ListLength returns the number of elements in the List
+// ListLength returns the number of elements in a list parsed from an env var.
 //
 // Example:
-// 		if env.ListLength("HOSTS", []string{}) > 3 {
-// 			fmt.Println("Thank you for following directions and listening to the guide.")
-// 		}
+//     if env.ListLength("HOSTS", env.ZeroList) > 3 {
+//        fmt.Println("Warning: too many hosts specified.")
+//     }
 func ListLength(env string, fallback []string) int {
-	L := List(env, fallback)
-	return len(L)
+	return len(List(env, fallback))
 }
 
-// MapHasKey allows you to interact with an ENV string storing a map to verify if it has a key or not
+// MapHasKey checks if a map parsed from an env var contains a specific key.
 //
 // Example:
-// 		if !env.MapHasKey("TAGS", map[string]string{}, "domain") {
-//			panic("missing required key 'domain' from TAGS env value")
-// 		}
+//     if !env.MapHasKey("CONFIG", env.ZeroMap, "domain") {
+//        panic("missing required key 'domain' from CONFIG env value")
+//     }
 func MapHasKey(env string, fallback map[string]string, key string) (ok bool) {
 	M := Map(env, fallback)
 	_, ok = M[key]
@@ -500,63 +379,64 @@ func MapHasKey(env string, fallback map[string]string, key string) (ok bool) {
 	return
 }
 
-// MapHasKeys allows you to interact with an ENV string storing a map to verify if it contains multiple keys
+// MapHasKeys checks if a map parsed from an env var contains all specified keys.
 //
 // Example:
-// 		if env.MapHasKeys("TAGS", map[string]string{}, []string{"environment", "author", "customer"}) {
-// 			fmt.Println("TAGS contain required keys!")
-// 		}
+//     required := []string{"env", "author", "customer"}
+//     if env.MapHasKeys("TAGS", env.ZeroMap, required...) {
+//        fmt.Println("TAGS contain required keys!")
+//     }
 func MapHasKeys(env string, fallback map[string]string, keys ...string) (ok bool) {
-	J := Map(env, fallback)
-	R := 0
-	for _, F := range keys {
-		if _, K := J[F]; K {
-			R++
+	parsedMap := Map(env, fallback)
+	foundCount := 0
+	for _, key := range keys {
+		if _, exists := parsedMap[key]; exists {
+			foundCount++
 		}
 	}
-	ok = R == len(keys)
+	ok = foundCount == len(keys)
 	if !ok && ShowVerbose {
 		OutLogger.Printf("MapHasKeys(%s)[%s] = %v", env, strings.Join(keys, ","), ok)
 	}
 	return ok
 }
 
-// Int64LessThan uses Int64 to check if the lessThan is less than
+// Int64LessThan checks if an int64 from an env var is less than a given value.
 //
 // Example:
-// 		if env.IntLessThan("HITS", 0, 33) {
-//			fmt.Printf("Congrats, hits are at: %d\n", env.Int("HITS"))
-//		}
+//     if env.Int64LessThan("HITS", 0, 100) {
+//        fmt.Println("Still under threshold.")
+//     }
 func Int64LessThan(env string, fallback, lessThan int64) (ok bool) {
 	i := Int64(env, fallback)
 	ok = i < lessThan
 	if !ok && ShowVerbose {
-		OutLogger.Printf("Int64(%s) %d < %d = %v", env, i, lessThan, ok)
+		OutLogger.Printf("Int64LessThan(%s): %d < %d = %v", env, i, lessThan, ok)
 	}
 	return ok
 }
 
-// Int64GreaterThan uses Int64 to allow you to check if the greaterThan is greater than
+// Int64GreaterThan checks if an int64 from an env var is greater than a given value.
 //
 // Example:
-// 		if env.IntGreaterThan("HITS", 0, 1000) {
-// 			log.Fatal("Maximum hits received.")
-// 		}
+//     if env.Int64GreaterThan("HITS", 0, 1000) {
+//        log.Fatal("Maximum hits received.")
+//     }
 func Int64GreaterThan(env string, fallback, greaterThan int64) (ok bool) {
 	i := Int64(env, fallback)
 	ok = i > greaterThan
 	if !ok && ShowVerbose {
-		OutLogger.Printf("Int64(%s) %d > %d = %v", env, i, greaterThan, ok)
+		OutLogger.Printf("Int64GreaterThan(%s): %d > %d = %v", env, i, greaterThan, ok)
 	}
 	return
 }
 
-// Int64InRange uses Int64 to allow you to check for a min and max value as < and > exclusive
+// Int64InRange checks if an int64 from an env var is within a given range (inclusive).
 //
 // Example:
-// 		if env.IntInRange("HITS", 0, 1,999) {
-// 			fmt.Println("Valid season!")
-// 		}
+//     if env.Int64InRange("YEAR", 2020, 2000, 2025) {
+//        fmt.Println("Valid year!")
+//     }
 func Int64InRange(env string, fallback, min, max int64) (ok bool) {
 	i := Int64(env, fallback)
 	ok = i >= min && i <= max
@@ -566,42 +446,42 @@ func Int64InRange(env string, fallback, min, max int64) (ok bool) {
 	return
 }
 
-// IntLessThan uses Int to check if the lessThan is less than
+// IntLessThan checks if an int from an env var is less than a given value.
 //
 // Example:
-// 		if env.IntLessThan("HITS", 0, 33) {
-//			fmt.Printf("Congrats, hits are at: %d\n", env.Int("HITS"))
-//		}
+//     if env.IntLessThan("RETRIES", 0, 3) {
+//        fmt.Println("Still have retries left.")
+//     }
 func IntLessThan(env string, fallback, lessThan int) (ok bool) {
 	i := Int(env, fallback)
 	ok = i < lessThan
 	if !ok && ShowVerbose {
-		OutLogger.Printf("Int(%s) %d < %d = %v", env, i, lessThan, ok)
+		OutLogger.Printf("IntLessThan(%s): %d < %d = %v", env, i, lessThan, ok)
 	}
 	return
 }
 
-// IntGreaterThan uses Int to allow you to check if the greaterThan is greater than
+// IntGreaterThan checks if an int from an env var is greater than a given value.
 //
 // Example:
-// 		if env.IntGreaterThan("HITS", 0, 1000) {
-// 			log.Fatal("Maximum hits received.")
-// 		}
+//     if env.IntGreaterThan("CONNECTIONS", 0, 100) {
+//        log.Fatal("Connection limit exceeded.")
+//     }
 func IntGreaterThan(env string, fallback, greaterThan int) bool {
 	i := Int(env, fallback)
 	ok := i > greaterThan
 	if !ok && ShowVerbose {
-		OutLogger.Printf("Int(%d) > %d == %v", i, greaterThan, ok)
+		OutLogger.Printf("IntGreaterThan(%s): %d > %d = %v", env, i, greaterThan, ok)
 	}
 	return ok
 }
 
-// IntInRange uses Int to allow you to check for a min and max value as < and > exclusive
+// IntInRange checks if an int from an env var is within a given range (inclusive).
 //
 // Example:
-// 		if env.IntInRange("HITS", 0, 1,999) {
-// 			fmt.Println("Valid season!")
-// 		}
+//     if env.IntInRange("PORT", 8080, 1024, 49151) {
+//        fmt.Println("Port is in the user range.")
+//     }
 func IntInRange(env string, fallback, min, max int) bool {
 	i := Int(env, fallback)
 	ok := i >= min && i <= max
@@ -611,36 +491,27 @@ func IntInRange(env string, fallback, min, max int) bool {
 	return ok
 }
 
-// ** SYSTEM CALLS **
+// ** SYSTEM & OS **
 
-// User returns a *user.User where if an error occurs, an empty user.User{} is returned pointing to os.TempDir
+// User returns the current user. If an error occurs, it may panic or return a
+// default user, depending on global configuration (PanicNoUser).
 //
 // Example:
-// 		fmt.Printf("Your Home Directory: %s", env.User().HomeDir)
+//     fmt.Printf("Your Home Directory: %s", env.User().HomeDir)
 func User() (u *user.User) {
 	var err error
 	u, err = user.Current()
-	defer func() {
-		if ShowVerbose {
-			var sb strings.Builder
-			sb.WriteString("User()\n")
-			sb.WriteString("  Username: " + u.Username + "\n")
-			sb.WriteString("  Name: " + u.Name + "\n")
-			sb.WriteString("  Uid: " + u.Uid + "\n")
-			sb.WriteString("  Gid: " + u.Gid + "\n")
-			sb.WriteString("  HomeDir: " + u.HomeDir + "\n")
-			OutLogger.Println(sb.String())
-		}
-	}()
+
 	if err != nil {
 		willPanic := AllowPanic && PanicNoUser
-		if PrintErrors && !willPanic {
-			ErrLogger.Printf("user.Current() aka env.User() failed due to err: %s", err.Error())
+		if !willPanic {
+			logError("user.Current()", err)
 		}
 		if willPanic {
-			panic(fmt.Errorf("user.Current() aka env.User() failed due to err: %s", err.Error()))
+			panic(fmt.Sprintf("user.Current() failed: %v", err))
 		}
-		u = &user.User{
+		// Return a sensible default if not panicking
+		return &user.User{
 			HomeDir:  os.TempDir(),
 			Uid:      "-1",
 			Gid:      "-1",
@@ -648,79 +519,53 @@ func User() (u *user.User) {
 			Name:     "Unknown",
 		}
 	}
+
+	if ShowVerbose {
+		var sb strings.Builder
+		sb.WriteString("User() Details:\n")
+		sb.WriteString(fmt.Sprintf("  Username: %s\n", u.Username))
+		sb.WriteString(fmt.Sprintf("  Name:     %s\n", u.Name))
+		sb.WriteString(fmt.Sprintf("  Uid:      %s\n", u.Uid))
+		sb.WriteString(fmt.Sprintf("  Gid:      %s\n", u.Gid))
+		sb.WriteString(fmt.Sprintf("  HomeDir:  %s\n", u.HomeDir))
+		OutLogger.Print(sb.String())
+	}
 	return
 }
 
-// ** CHANGES **
-
-// Set wraps os.Setenv() and uses the PrintErrors, EnableVerboseLogging, UseLogger, ErrLogger, and OutLogger
+// Set wraps os.Setenv, returning an error if it fails.
 //
 // Example:
-// 		env.Set("BACKUPS_DIR", filepath.Join(env.User().HomeDir, "backups"))
-func Set(env string, value string) {
+//     err := env.Set("BACKUPS_DIR", "/tmp/backups")
+//     if err != nil {
+//        log.Fatal(err)
+//     }
+func Set(env string, value string) error {
 	err := os.Setenv(env, value)
 	if err != nil {
-		if PrintErrors {
-			msg := fmt.Sprintf("Set(%s) failed: %s", env, err.Error())
-			if UseLogger {
-				ErrLogger.Println(msg)
-			} else {
-				_, _ = fmt.Fprintln(os.Stderr, msg)
-			}
-		}
-		return
+		logError(env, err)
+		return err
 	}
 	if ShowVerbose {
 		OutLogger.Printf("Set(%s) to value '%s'", env, value)
 	}
+	return nil
 }
 
-// Unset wraps os.Unsetenv and uses the PrintErrors EnableVerboseLogging UseLogger ErrLogger and OutLogger
+// Unset wraps os.Unsetenv, returning an error if it fails.
 //
 // Example:
-// 		env.Unset("BACKUPS_DIR")
-func Unset(env string) {
+//     err := env.Unset("OLD_VAR")
+func Unset(env string) error {
 	err := os.Unsetenv(env)
 	if err != nil {
-		if PrintErrors {
-			msg := fmt.Sprintf("Unset(%s) failed: %s", env, err.Error())
-			if UseLogger {
-				ErrLogger.Println(msg)
-			} else {
-				_, _ = fmt.Fprintln(os.Stderr, msg)
-			}
-		}
-		return
+		logError(env, err)
+		return err
 	}
 	if ShowVerbose {
 		OutLogger.Printf("Unset(%s) successful", env)
 	}
-}
-
-// WasUnset allows you to conditionally check if an ENV was unset for the runtime
-//
-// Example:
-// 		u, _ := user.
-// 		if !env.WasUnset("BACKUPS_DIR") {
-// 			// failed to unset ENV "BACKUPS_DIR"
-// 		}
-func WasUnset(env string) bool {
-	err := os.Unsetenv(env)
-	if err != nil {
-		if PrintErrors {
-			msg := fmt.Sprintf("WasUnset(%s) failed: %s", env, err.Error())
-			if UseLogger {
-				ErrLogger.Println(msg)
-			} else {
-				_, _ = fmt.Fprintln(os.Stderr, msg)
-			}
-		}
-		return false
-	}
-	if ShowVerbose {
-		OutLogger.Printf("WasUnset(%s) successful", env)
-	}
-	return true
+	return nil
 }
 
 // WasSet allows you to conditionally check if an ENV was defined for the runtime
@@ -733,31 +578,38 @@ func WasUnset(env string) bool {
 func WasSet(env string, value string) bool {
 	err := os.Setenv(env, value)
 	if err != nil {
-		if PrintErrors {
-			msg := fmt.Sprintf("WasSet(%s) failed: %s", env, err.Error())
-			if UseLogger {
-				ErrLogger.Println(msg)
-			} else {
-				_, _ = fmt.Fprintln(os.Stderr, msg)
-			}
-		}
+		logError(env, err)
 		return false
 	}
 	// Verify it was set correctly
 	v, ok := os.LookupEnv(env)
 	if !ok || v != value {
-		if PrintErrors {
-			msg := fmt.Sprintf("WasSet(%s) failed verification after setting", env)
-			if UseLogger {
-				ErrLogger.Println(msg)
-			} else {
-				_, _ = fmt.Fprintln(os.Stderr, msg)
-			}
-		}
+		msg := fmt.Sprintf("WasSet(%s) failed verification after setting", env)
+		logError(env, errors.New(msg))
 		return false
 	}
 	if ShowVerbose {
 		OutLogger.Printf("WasSet(%s) successful", env)
+	}
+	return true
+}
+
+// WasUnset allows you to conditionally check if an ENV was unset for the runtime
+//
+// Example:
+// 		u, _ := user.
+// 		if !env.WasUnset("BACKUPS_DIR") {
+// 			// failed to unset ENV "BACKUPS_DIR"
+// 		}
+func WasUnset(env string) bool {
+	err := os.Unsetenv(env)
+	if err != nil {
+		msg := fmt.Sprintf("WasUnset(%s) failed: %s", env, err.Error())
+		logError(env, errors.New(msg))
+		return false
+	}
+	if ShowVerbose {
+		OutLogger.Printf("WasUnset(%s) successful", env)
 	}
 	return true
 }
