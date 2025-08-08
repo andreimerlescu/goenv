@@ -138,33 +138,6 @@ customize the `base` and `bitSize` argument values when used in conjunction with
 | `UnitDurationBase`    | `int` | `10`    | The `base` value of the number.           |
 | `UnitDurationBitSize` | `int` | `64`    | The `bitSize` value of the number.        |
 
-Additionally, you can pre-define these values in your environment without manually changing the code of
-any package that you submit. If your local workstation requires a difference here, for whatever reason,
-this package allows you to assert the **Default** values from the Environment itself. 
-
-| ENV                                | Expected Type | Variable                   | Type     |
-|------------------------------------|---------------|----------------------------|----------|
-| `AM_GO_ENV_MAP_SEPARATOR`          | `String`      | `env.MapSeparator`         | `String` |
-| `AM_GO_ENV_MAP_ITEM_SEPARATOR`     | `String`      | `env.MapItemSeparator`     | `String` |
-| `AM_GO_ENV_MAP_SPLIT_N`            | `Int`         | `env.MapSplitN`            | `Int`    |
-| `AM_GO_ENV_LIST_SEPARATOR`         | `String`      | `env.ListSeparator`        | `String` |
-| `AM_GO_ENV_UNIT_DURATION_BASE`     | `Int`         | `env.UnitDurationBase`     | `Int`    |
-| `AM_GO_ENV_UNIT_DURATION_BIT_SIZE` | `Int`         | `env.UnitDurationBitSize`  | `Int`    |
-| `AM_GO_ENV_DURATION_BASE`          | `Int`         | `env.DurationBase`         | `Int`    |
-| `AM_GO_ENV_DURATION_BIT_SIZE`      | `Int`         | `env.DurationBitSize`      | `Int`    | 
-| `AM_GO_ENV_FLOAT64_BIT_SIZE`       | `Int`         | `env.Float64BitSize`       | `Int`    |
-| `AM_GO_ENV_FLOAT32_BIT_SIZE`       | `Int`         | `env.Float32BitSize`       | `Int`    |
-| `AM_GO_ENV_INT64_BASE`             | `Int`         | `env.Int64Base`            | `Int`    |
-| `AM_GO_ENV_INT64_BIT_SIZE`         | `Int`         | `env.Int64BitSize`         | `Int`    |
-| `AM_GO_ENV_ALWAYS_ALLOW_PANIC`     | `String`      | `env.AllowPanic`           | `Bool`   |
-| `AM_GO_ENV_ALWAYS_PRINT_ERRORS`    | `String`      | `env.PrintErrors`          | `Bool`   |
-| `AM_GO_ENV_ALWAYS_USE_LOGGER`      | `String`      | `env.UseLogger`            | `Bool`   |
-| `AM_GO_ENV_ENABLE_VERBOSE_LOGGING` | `String`      | `env.EnableVerboseLogging` | `Bool`   |
-| `AM_GO_ENV_PANIC_NO_USER`          | `String`      | `env.PanicNoUser`          | `Bool`   |
-
-
-> *NOTE* When **Type** `Bool` has an **Expected Type** of `String`, _true_ is `"true"` and _false_ is `"false"`.
-
 ## Types 
 
 ### `String`
