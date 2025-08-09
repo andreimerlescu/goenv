@@ -1,228 +1,115 @@
-# ENV
+# Go ENV
 
-This go package is designed to give you easy access to interact with the ENV to request types back when working with
-Linux operating systems (including macOS Silicon and Intel). 
+This utility is designed to allow you to let you interact with `.env` files in a manner consistent with `.env.local`, 
+`.env.develop`, `.env.production`, etc., and we have shorter hand notations for interacting with `.env` files. 
 
 ## Installation
 
-```shell
-go get -u github.com/andreimerlescu/env
+```bash
+go get github.com/andreimerlescu/goenv@latest
 ```
 
-## Package Usage
+### Package `env`
 
-```go
-package main
+The basis behind `env` is the `env` package, which can be used in other Go applications and is licensed as Apache 2.0.
 
-import (
-    "fmt"
-    "strings"
-    "time"
-    
-    "github.com/andreimerlescu/env"
-)
+```bash
+go get -u github.com/andreimerlescu/goenv/env
+```
 
-func main() {
-    hostname := env.String("HOSTNAME", "localhost")
-    port := env.Int("PORT", 3306)
-    user := env.String("USERNAME", "user")
-    pass := env.String("PASSWORD", "")
-    timeout := env.UnitDuration("TIMEOUT", time.Duration(3), time.Second)
-    pi := env.Float64("PI", 3.14)
-    pii := env.Float32("PI", 3.33)
-    tags := env.List("TAGS", env.ZeroList)
-    properties := env.Map("TAGS", env.ZeroMap)
-    
-    fmt.Println(
-        hostname, 
-        port, 
-        user, 
-        strings.Repeat("*", len(pass)), 
-        pi, 
-        pii, 
-        timeout, 
-        strings.Join(tags, ","), 
-        properties)
+The [README.md](/env/README.md) has more information about using the package.
+
+## Usage
+
+I wrote this package because sometimes I just need to work with an env file, even if it doesn't yet exist. This is 
+particularly useful for input validation of env files and the ability to transform the syntax of the .env file into
+multiple formats. The [test.sh](test.sh) file has the summary of arguments that are best to run for the package. 
+
+
+```sh
+go install github.com:andreimerlescu/goenv@latest
+goenv -has -env HOSTNAME || goenv -write -env HOSTNAME -value "$(hostname)" || { echo ERROR && exit 1; }
+```
+
+## Testing
+
+```log
+andrei@GitHub:~/repos/goenv|master⚡ ⇒  make all
+Summary generated: summaries/summary.2025.08.09.19.28.57.UTC.md
+Building goenv binary...
+Clean successful: ./bin/goenv-darwin-arm64
+Build successful: ./bin/goenv-darwin-arm64
+
+andrei@goenv.git:. ⚡ Test #1 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -has -env HOSTNAME
+andrei@goenv.git:. ⚡ Test #2 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -has -env NON_EXISTENT
+andrei@goenv.git:. ⚡ Test #3 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -is -env DATABASE -value test_data
+andrei@goenv.git:. ⚡ Test #4 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -is -env DATABASE -value wrong_data
+andrei@goenv.git:. ⚡ Test #5 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -print
+AWS_REGION=us-west-2
+OUTPUT=json
+HOSTNAME=localhost
+DBUSER=readonly
+DBPASS=readonly
+DATABASE=test_data
+andrei@goenv.git:. ⚡ Test #6 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -json
+{
+  "AWS_REGION": "us-west-2",
+  "DATABASE": "test_data",
+  "DBPASS": "readonly",
+  "DBUSER": "readonly",
+  "HOSTNAME": "localhost",
+  "OUTPUT": "json"
 }
+andrei@goenv.git:. ⚡ Test #7 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -yaml
+---
+AWS_REGION: "us-west-2" 
+OUTPUT: "json" 
+HOSTNAME: "localhost" 
+DBUSER: "readonly" 
+DBPASS: "readonly" 
+DATABASE: "test_data" 
+andrei@goenv.git:. ⚡ Test #8 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -toml
+DBPASS: "readonly" 
+DATABASE: "test_data" 
+AWS_REGION: "us-west-2" 
+OUTPUT: "json" 
+HOSTNAME: "localhost" 
+DBUSER: "readonly" 
+andrei@goenv.git:. ⚡ Test #9 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -ini
+[default]
+OUTPUT = json
+HOSTNAME = localhost
+DBUSER = readonly
+DBPASS = readonly
+DATABASE = test_data
+AWS_REGION = us-west-2
+andrei@goenv.git:. ⚡ Test #10 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -xml
+<?xml version="1.0" encoding="UTF-8"?>
+<env>
+   <AWS_REGION>us-west-2</AWS_REGION>
+   <OUTPUT>json</OUTPUT>
+   <HOSTNAME>localhost</HOSTNAME>
+   <DBUSER>readonly</DBUSER>
+   <DBPASS>readonly</DBPASS>
+   <DATABASE>test_data</DATABASE>
+</env>
+andrei@goenv.git:. ⚡ Test #11 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -write -add -env NEW_KEY -value 'a new value'
+andrei@goenv.git:. ⚡ Test #12 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -has -env NEW_KEY
+andrei@goenv.git:. ⚡ Test #13 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -write -add -env HOSTNAME -value 'another-host'
+andrei@goenv.git:. ⚡ Test #14 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -is -env HOSTNAME -value localhost
+andrei@goenv.git:. ⚡ Test #15 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -write -rm -env OUTPUT
+andrei@goenv.git:. ⚡ Test #16 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -not -has -env OUTPUT
+andrei@goenv.git:. ⚡ Test #17 ⇒  ./bin/goenv-darwin-arm64 -file new.env -add -env HELLO -value world -write
+andrei@goenv.git:. ⚡ Test #18 ⇒  ./bin/goenv-darwin-arm64 -file new.env -is -env HELLO -value world
+andrei@goenv.git:. ⚡ Test #19 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -v
+v0.0.2
+andrei@goenv.git:. ⚡ Test #20 ⇒  ./bin/goenv-darwin-arm64 -file non_existent_file.env -add -env FOO -value bar || echo "Test success because we expected an error here."                                                                                                      
+andrei@goenv.git:. ⚡ Test #21 ⇒  ./bin/goenv-darwin-arm64 -file non_existent_file.env -add -env FOO -value bar -write
+All 21 tests PASS!
+NEW: bin/goenv-darwin-amd64
+NEW: bin/goenv-darwin-arm64
+NEW: bin/goenv-linux-amd64
+NEW: bin/goenv-darwin-arm64
+NEW: bin/goenv.exe
+NEW: /Users/andrei/go/bin/goenv
 ```
-
-## Function List
-
-- **Can `panic()` with `export AM_GO_ENV_ALWAYS_ALLOW_PANIC=true`**
-    - `func User() (u *user.User)`
-    - `func MustExist(env string)`
-- **Types**
-    - `func Bool(env string, fallback bool) bool`
-    - `func String(env string, fallback string) string`
-    - `func Int(env string, fallback int) int`
-    - `func Int64(env string, fallback int64) int64`
-    - `func Float32(env string, fallback float32) float32`
-    - `func Float64(env string, fallback float64) float64`
-    - `func Duration(env string, fallback time.Duration) time.Duration`
-    - `func UnitDuration(env string, fallback, unit time.Duration) time.Duration`
-    - `func List(env string, fallback []string) []string`
-    - `func Map(env string, fallback map[string]string) map[string]string`
-- **Data Control**
-    - `func Unset(env string)`
-    - `func ListLength(env string, fallback []string) int`
-    - `func Set(env string, value string) `
-- **Conditionals**
-    - `func Exists(env string) (ok bool)`
-    - `func IsFalse(env string) (ok bool)`
-    - `func IsTrue(env string) (ok bool)`
-    - `func AreTrue(envs ...string) (ok bool)`
-    - `func AreFalse(envs ...string) (ok bool)`
-    - `func WasSetWasSet(env string, value string) (ok bool)`
-    - `func WasUnset(env string) (ok bool)`
-    - `func Int64LessThan(env string, fallback, lessThan int64) (ok bool)`
-    - `func Int64GreaterThan(env string, fallback, greaterThan int64) (ok bool)`
-    - `func Int64InRange(env string, fallback, min, max int64) (ok bool)`
-    - `func IntLessThan(env string, fallback, lessThan int) (ok bool)`
-    - `func IntGreaterThan(env string, fallback, greaterThan int) (ok bool)`
-    - `func IntInRange(env string, fallback, min, max int) (ok bool)`
-    - `func ListContains(env string, fallback []string, contains string) (ok bool)`
-    - `func ListIsLength(env string, fallback []string, wantLength int) (ok bool)`
-    - `func MapHasKeys(env string, fallback map[string]string, keys ...string) (ok bool)`
-    - `func MapHasKey(env string, fallback map[string]string, key string) (ok bool)`
-
-## Package Control Variables
-
-This package can be manipulated using some control variables in your runtime when you're consuming the
-package. For instance, you can define what makes a list from a string, ie. how you split the string.
-The property `ListSeparator` defaults to `,` but allows you to change it. Additionally, there is 
-`MapSeparator` (default `,`) and `MapItemSeparator` (default `=`) that allows you to define how a string
-can become a `map[string]string` via `key1=value,key2=value` via `,` & `=`, but you can change it to anything.
-
-```go
-package main
-
-import (
-	"fmt"
-    
-    "github.com/andreimerlescu/env"
-)
-
-func main(){
-    // Lists
-    env.Set("TEST_LIST", "item1|item2|item3")
-    env.ListSeparator = "|" 
-    items := env.List("TEST_LIST", env.ZeroList)
-    for i, item := range items {
-		fmt.Printf("TEST_LIST#%d=%s\n", i, item)
-    }
-    
-    // Maps
-    env.Set("TEST_MAP", "key1~value|key2~value")
-    env.MapSeparator = "|" 
-    env.MapItemSeparator = "~"
-	env.MapSplitN = 2 // default
-    properties := env.Map("TEST_MAP", env.ZeroMap)
-    for key, value := range properties {
-        fmt.Printf("TEST_MAP[%s]=%s\n", key, value)
-    }
-}
-
-```
-
-Additionally, you can modify the **default** behavior in the way `strconv.ParseInt` and `strconv.ParseFloat`
-customize the `base` and `bitSize` argument values when used in conjunction with `env`. 
-
-| Variable              | Type  | Default | Usage                                     |
-|-----------------------|-------|---------|-------------------------------------------|
-| `Int64Base`           | `int` | `10`    | The `base` value of the number.           |
-| `Int64BitSize`        | `int` | `64`    | The `bitSize` value of the number.        |
-| `Float32BitSize`      | `int` | `32`    | The `bitSize` value of the number.        |
-| `Float64BitSize`      | `int` | `64`    | The `bitSize` of the value of the number. |
-| `DurationBase`        | `int` | `10`    | The `base` value of number.               |
-| `DurationBitSize`     | `int` | `10`    | The `bitSize` value of the number.        |
-| `UnitDurationBase`    | `int` | `10`    | The `base` value of the number.           |
-| `UnitDurationBitSize` | `int` | `64`    | The `bitSize` value of the number.        |
-
-## Types 
-
-### `String`
-
-```go
-env.String("<ENV>", "<DEFAULT>")
-```
-
-### `Int`
-
-```go
-env.Int("<ENV>", <DEFAULT>)
-```
-
-### `Int64`
-
-```go
-env.Int64("<ENV>", <DEFAULT>)
-```
-
-### `Float32`
-
-```go
-env.Float32("<ENV>", <DEFAULT>)
-```
-
-### `Float64`
-
-```go
-env.Float64("<ENV>", <DEFAULT>)
-```
-
-### `Duration`
-
-```go
-env.Duration("<ENV>", <DEFAULT>)
-```
-
-### `UnitDuration`
-
-```go
-env.UnitDuration("<ENV>", <DEFAULT>, time.<UNIT>)
-```
-
-### `Map`
-
-```go
-env.Map("<ENV>", map[string]string{"<KEY>": "<VALUE>"})
-```
-
-## Environment Controls
-
-You can use the following environment variables to define defaults used by the package across the runtime of any
-go binary that uses this package. Useful if you're enforcing base 8 math on in64 operations.
-
-| **Environment Variable**           | **Type** | **Default** | **Usage**                                                                  |
-|------------------------------------|----------|-------------|----------------------------------------------------------------------------|
-| `AM_GO_ENV_MAP_SEPARATOR`          | `String` | `,`         | How map items are separated.                                               |
-| `AM_GO_ENV_MAP_ITEM_SEPARATOR`     | `String` | `=`         | How keys and values in map items are separated.                            |
-| `AM_GO_ENV_MAP_SPLIT_N`            | `Int`    | `1`         | How many `AM_GO_ENV_MAP_ITEM_SEPARATOR` to `strings.SplitN` on.            |
-| `AM_GO_ENV_LIST_SEPARATOR`         | `String` | `,`         | How list items are separated.                                              |
-| `AM_GO_ENV_UNIT_DURATION_BASE`     | `Int`    | `10`        | How `strconv.ParseInt` defines `base` by default.                          |
-| `AM_GO_ENV_UNIT_DURATION_BIT_SIZE` | `Int`    | `64`        | How `strconv.ParseInt` defines `bitSize` by default.                       |
-| `AM_GO_ENV_DURATION_BASE`          | `Int`    | `10`        | How `strconv.ParseInt` defines `base` by default.                          |
-| `AM_GO_ENV_DURATION_BIT_SIZE`      | `Int`    | `64`        | How `strconv.ParseInt` defines `bitSize` by default.                       |
-| `AM_GO_ENV_FLOAT64_BIT_SIZE`       | `Int`    | `64`        | How `strconv.ParseFloat` defines `bitSize` by default.                     |
-| `AM_GO_ENV_FLOAT32_BIT_SIZE`       | `Int`    | `32`        | How `strconv.ParseFloat` defines `bitSize` by default.                     |
-| `AM_GO_ENV_INT64_BASE`             | `Int`    | `10`        | How `strconv.ParseInt` defines `base` by default.                          |
-| `AM_GO_ENV_INT64_BIT_SIZE`         | `Int`    | `64`        | How `strconv.ParseInt` defines `bitSize` by default.                       | 
-| `AM_GO_ENV_ALWAYS_ALLOW_PANIC`     | `Bool`   | `false`     | Permit the use of `panic()` within the package.                            |
-| `AM_GO_ENV_ALWAYS_PRINT_ERRORS`    | `Bool`   | `false`     | Permit writing to STDERR to be returned.                                   |
-| `AM_GO_ENV_ALWAYS_USE_LOGGER`      | `Bool`   | `false`     | Permit the STDOUT, STDERR logger to be used.                               |
-| `AM_GO_ENV_ENABLE_VERBOSE_LOGGING` | `Bool`   | `false`     | Permit the STDOUT logger to report when something wasn't fully successful. |
-| `AM_GO_ENV_PANIC_NO_USER`          | `Bool`   | `false`     | Use `panic()` over `os.Exit(1)` when `user.Current()` returns an error.    |
-
-## License
-
-This package is Open Source and is licensed with the Apache 2.0 License. 
-
-## Why?
-
-I really like clean code, and I find that when working with the environment in an application, it can get messy. This
-package is my solution that. I wanted a way to quickly interact with the `os.Environ()` without having to do so much
-repetitive work across each project. Thus, why this package was born. I just merged that work and forked it into its own
-package so it can be used externally and enhanced to a better purpose. 
-
-This package is called `env` and it is **NOT** made for Windows, but if you're on Windows, feel free to try it out. 
-Enjoy using it!
