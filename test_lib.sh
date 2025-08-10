@@ -57,6 +57,9 @@ function run() {
   if [[ "${cmd}" == -file* ]]; then
     # the user is providing a custom file
     cmd="$BIN_PATH ${1}"
+  elif [[ "${cmd}" == -raw* ]]; then
+    cmd="${1}"
+    cmd=${cmd#"-raw "}
   else
     cmd="$BIN_PATH -file sample.env ${1}"
   fi
@@ -82,11 +85,14 @@ function main(){
   reset_sample_env
 
   # Iterate through tests using array indices
-  for i in "${!test_commands[@]}"; do
-    run "${test_commands[i]}"
+  for cmd in "${test_commands[@]}"; do
+    [[ -z $cmd || $cmd == \#* ]] && continue
+    run "${cmd}"
   done
 
   rm sample.env
+  rm non_existent_file.env
+  rm new.env
   echo "All $(counter -name "${counterName}") tests PASS!"
 }
 

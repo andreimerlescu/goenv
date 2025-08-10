@@ -1,0 +1,44 @@
+-raw ls -la *.env*
+-has -env HOSTNAME
+-has -env NON_EXISTENT
+-is -env DATABASE -value test_data
+-is -env DATABASE -value wrong_data
+-print
+-json
+-yaml
+-toml
+-ini
+-xml
+-write -add -env NEW_KEY -value 'a new value'
+-has -env NEW_KEY
+-write -add -env HOSTNAME -value 'another-host'
+-is -env HOSTNAME -value localhost
+-write -rm -env OUTPUT
+-not -has -env OUTPUT
+-file new.env -add -env HELLO -value world -write
+-file new.env -is -env HELLO -value world
+-v
+-file non_existent_file.env -add -env FOO -value bar || echo \"Test success because we expected an error here.\"
+-file non_existent_file.env -add -env FOO -value bar -write
+-raw ls -la *.env*
+-mkall -write
+-raw ls -la *.env*
+-cleanall -write
+-file space.env -init -write
+-raw ls -la *.env*
+-file space.env -write -add -env HOSTNAME -value "$(hostname)"
+-file space.env -write -add -env USER -value "$(whoami)"
+-file space.env -write -add -env PWD -value "$(pwd)"
+-file space.env -write -add -env HOME -value "${HOME}"
+-file space.env -write -add -env APP -value goenv
+-raw ls -la *.env*
+-raw cat space.env
+-file space.env -mkall -write
+-raw ls -la *.env*
+-raw cat space.env.ini
+-raw cat space.env.yaml
+-raw cat space.env.json
+-raw cat space.env.xml
+-raw cat space.env.toml
+-file space.env -cleanall -write
+

@@ -11,27 +11,7 @@ import (
 	"github.com/andreimerlescu/goenv/env"
 )
 
-const (
-	argEnvFile string = "file"
-	argEnv     string = "env"
-	argValue   string = "value"
-	argAdd     string = "add"
-	argRm      string = "rm"
-	argProd    string = "prod"
-	argHas     string = "has"
-	argIs      string = "is"
-	argVerbose string = "vv"
-	argVersion string = "v"
-	argWrite   string = "write"
-	argJson    string = "json"
-	argIni     string = "ini"
-	argYaml    string = "yaml"
-	argToml    string = "toml"
-	argPrint   string = "print"
-	argXml     string = "xml"
-	argNot     string = "not"
-)
-
+// NewConfiguration returns a new figtree.Plant that contains each configurable that begins with argEnvFile
 func NewConfiguration() figtree.Plant {
 	love := figtree.Options{
 		IgnoreEnvironment: true,
@@ -65,6 +45,9 @@ func NewConfiguration() figtree.Plant {
 	figs = figs.NewBool(argIni, env.Bool(AmGoEnvAlwaysUseIni, false), "Output in INI format")
 	figs = figs.NewBool(argPrint, env.Bool(AmGoEnvAlwaysPrint, false), "Always print the contents of the env before exiting upon success")
 	figs = figs.NewBool(argNot, false, "Negates -has or -is")
+	figs = figs.NewBool(argInit, false, "Create the -file if it does not exist")
+	figs = figs.NewBool(argMkAll, false, "Will create all -json -xml -toml -ini -yaml output formats of -file")
+	figs = figs.NewBool(argCleanAll, false, "Remove all -json -xml -toml -ini")
 
 	if err := figs.Load(); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)

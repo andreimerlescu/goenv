@@ -22,13 +22,15 @@ func Sanity(figs figtree.Plant, state *stateful) {
 	if figs == nil || state == nil {
 		panic("Sanity called with nil figtree or state!")
 	}
+	// #begin
 	using := ""
 	selectedOut := false
 
+	// -json
 	if state.toJson && *figs.Bool(argVerbose) {
 		fmt.Println("Using JSON environment file")
 		if state.write && state.isProd && state.prodProtected {
-			fmt.Printf("We'll write to %s.json for you!", state.Path)
+			fmt.Printf("We'll write to %s%s for you!", state.Path, outFormatJson)
 		}
 	}
 	if state.toJson { // skip selectedOut here
@@ -36,10 +38,11 @@ func Sanity(figs figtree.Plant, state *stateful) {
 		selectedOut = true
 	}
 
+	// -ini
 	if state.toIni && *figs.Bool(argVerbose) {
 		fmt.Println("Using INI environment file")
 		if state.write && state.isProd && state.prodProtected {
-			fmt.Printf("We'll write to %s.ini for you!", state.Path)
+			fmt.Printf("We'll write to %s%s for you!", state.Path, outFormatIni)
 		}
 	}
 	if state.toIni && selectedOut {
@@ -50,10 +53,11 @@ func Sanity(figs figtree.Plant, state *stateful) {
 		using = "ini"
 	}
 
+	// -yaml
 	if state.toYaml && *figs.Bool(argVerbose) {
 		fmt.Println("Using YAML environment file")
 		if state.write && state.isProd && state.prodProtected {
-			fmt.Printf("We'll write to %s.yaml for you!\n", state.Path)
+			fmt.Printf("We'll write to %s%s for you!\n", state.Path, outFormatYaml)
 		}
 	}
 	if state.toYaml && selectedOut {
@@ -64,19 +68,37 @@ func Sanity(figs figtree.Plant, state *stateful) {
 		using = "yaml"
 	}
 
+	// -xml
+	if state.toXml && *figs.Bool(argVerbose) {
+		fmt.Println("Using XML environment file")
+		if state.write && state.isProd && state.prodProtected {
+			fmt.Printf("We'll write to %s%s for you!\n", state.Path, outFormatXml)
+		}
+	}
+	if state.toXml && selectedOut {
+		_, _ = fmt.Fprintf(os.Stderr, "using %s write to %s.%s. ERROR CANNOT COMBINE -json -ini -toml -yaml \n", using, state.Path, using)
+		os.Exit(1)
+	} else if state.toXml && !selectedOut {
+		selectedOut = true
+		using = "xml"
+	}
+
+	// -toml
 	if state.toToml && *figs.Bool(argVerbose) {
 		fmt.Println("Using TOML environment file")
 		if state.write && state.isProd && state.prodProtected {
-			fmt.Printf("We'll write to %s.toml for you!\n", state.Path)
+			fmt.Printf("We'll write to %s%s for you!\n", state.Path, outFormatToml)
 		}
 	}
 	if state.toToml && selectedOut {
 		_, _ = fmt.Fprintf(os.Stderr, "using %s write to %s.%s. ERROR CANNOT COMBINE -json -ini -toml -yaml \n", using, state.Path, using)
+		os.Exit(1)
 	} else if state.toToml && !selectedOut {
 		selectedOut = true
 		using = "toml"
 	}
 
+	// #done
 	if !selectedOut && *figs.Bool(argVerbose) {
 		fmt.Println("Not exporting the environment to a new file")
 	}

@@ -24,29 +24,19 @@ export counterName
 
 counter -name $counterName -reset -yes 1> /dev/null || safe_exit "failed to reset counter"
 
-declare -a test_commands=(
-  "-has -env HOSTNAME"
-  "-has -env NON_EXISTENT"
-  "-is -env DATABASE -value test_data"
-  "-is -env DATABASE -value wrong_data"
-  "-print"
-  "-json"
-  "-yaml"
-  "-toml"
-  "-ini"
-  "-xml"
-  "-write -add -env NEW_KEY -value 'a new value'"
-  "-has -env NEW_KEY"
-  "-write -add -env HOSTNAME -value 'another-host'"
-  "-is -env HOSTNAME -value localhost"
-  "-write -rm -env OUTPUT"
-  "-not -has -env OUTPUT"
-  "-file new.env -add -env HELLO -value world -write"
-  "-file new.env -is -env HELLO -value world"
-  "-v"
-  "-file non_existent_file.env -add -env FOO -value bar || echo \"Test success because we expected an error here.\""
-  "-file non_existent_file.env -add -env FOO -value bar -write"
-)
+declare input_file
+input_file="${1:-test_cmds.txt}"
+
+declare -a test_commands=()
+
+if [ -n "${input_file}" ] && [ -f "${input_file}" ]; then
+
+  while IFS= read -r cmd; do
+      [[ -z $cmd || $cmd == \#* ]] && continue
+      test_commands+=("${cmd}")
+  done < "$input_file"
+
+fi
 
 export test_commands
 

@@ -37,21 +37,21 @@ goenv -has -env HOSTNAME || goenv -write -env HOSTNAME -value "$(hostname)" || {
 andrei@GitHub:~/repos/goenv|master⚡ ⇒  make all
 Summary generated: summaries/summary.2025.08.09.19.28.57.UTC.md
 Building goenv binary...
-Clean successful: ./bin/goenv-darwin-arm64
-Build successful: ./bin/goenv-darwin-arm64
+Clean successful: goenv
+Build successful: goenv
 
-andrei@goenv.git:. ⚡ Test #1 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -has -env HOSTNAME
-andrei@goenv.git:. ⚡ Test #2 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -has -env NON_EXISTENT
-andrei@goenv.git:. ⚡ Test #3 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -is -env DATABASE -value test_data
-andrei@goenv.git:. ⚡ Test #4 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -is -env DATABASE -value wrong_data
-andrei@goenv.git:. ⚡ Test #5 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -print
+andrei@goenv.git:. ⚡ Test #1 ⇒  goenv -file sample.env -has -env HOSTNAME
+andrei@goenv.git:. ⚡ Test #2 ⇒  goenv -file sample.env -has -env NON_EXISTENT
+andrei@goenv.git:. ⚡ Test #3 ⇒  goenv -file sample.env -is -env DATABASE -value test_data
+andrei@goenv.git:. ⚡ Test #4 ⇒  goenv -file sample.env -is -env DATABASE -value wrong_data
+andrei@goenv.git:. ⚡ Test #5 ⇒  goenv -file sample.env -print
 AWS_REGION=us-west-2
 OUTPUT=json
 HOSTNAME=localhost
 DBUSER=readonly
 DBPASS=readonly
 DATABASE=test_data
-andrei@goenv.git:. ⚡ Test #6 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -json
+andrei@goenv.git:. ⚡ Test #6 ⇒  goenv -file sample.env -json
 {
   "AWS_REGION": "us-west-2",
   "DATABASE": "test_data",
@@ -60,7 +60,7 @@ andrei@goenv.git:. ⚡ Test #6 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -j
   "HOSTNAME": "localhost",
   "OUTPUT": "json"
 }
-andrei@goenv.git:. ⚡ Test #7 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -yaml
+andrei@goenv.git:. ⚡ Test #7 ⇒  goenv -file sample.env -yaml
 ---
 AWS_REGION: "us-west-2" 
 OUTPUT: "json" 
@@ -68,14 +68,14 @@ HOSTNAME: "localhost"
 DBUSER: "readonly" 
 DBPASS: "readonly" 
 DATABASE: "test_data" 
-andrei@goenv.git:. ⚡ Test #8 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -toml
+andrei@goenv.git:. ⚡ Test #8 ⇒  goenv -file sample.env -toml
 DBPASS: "readonly" 
 DATABASE: "test_data" 
 AWS_REGION: "us-west-2" 
 OUTPUT: "json" 
 HOSTNAME: "localhost" 
 DBUSER: "readonly" 
-andrei@goenv.git:. ⚡ Test #9 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -ini
+andrei@goenv.git:. ⚡ Test #9 ⇒  goenv -file sample.env -ini
 [default]
 OUTPUT = json
 HOSTNAME = localhost
@@ -83,7 +83,7 @@ DBUSER = readonly
 DBPASS = readonly
 DATABASE = test_data
 AWS_REGION = us-west-2
-andrei@goenv.git:. ⚡ Test #10 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -xml
+andrei@goenv.git:. ⚡ Test #10 ⇒  goenv -file sample.env -xml
 <?xml version="1.0" encoding="UTF-8"?>
 <env>
    <AWS_REGION>us-west-2</AWS_REGION>
@@ -93,18 +93,18 @@ andrei@goenv.git:. ⚡ Test #10 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -
    <DBPASS>readonly</DBPASS>
    <DATABASE>test_data</DATABASE>
 </env>
-andrei@goenv.git:. ⚡ Test #11 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -write -add -env NEW_KEY -value 'a new value'
-andrei@goenv.git:. ⚡ Test #12 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -has -env NEW_KEY
-andrei@goenv.git:. ⚡ Test #13 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -write -add -env HOSTNAME -value 'another-host'
-andrei@goenv.git:. ⚡ Test #14 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -is -env HOSTNAME -value localhost
-andrei@goenv.git:. ⚡ Test #15 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -write -rm -env OUTPUT
-andrei@goenv.git:. ⚡ Test #16 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -not -has -env OUTPUT
-andrei@goenv.git:. ⚡ Test #17 ⇒  ./bin/goenv-darwin-arm64 -file new.env -add -env HELLO -value world -write
-andrei@goenv.git:. ⚡ Test #18 ⇒  ./bin/goenv-darwin-arm64 -file new.env -is -env HELLO -value world
-andrei@goenv.git:. ⚡ Test #19 ⇒  ./bin/goenv-darwin-arm64 -file sample.env -v
+andrei@goenv.git:. ⚡ Test #11 ⇒  goenv -file sample.env -write -add -env NEW_KEY -value 'a new value'
+andrei@goenv.git:. ⚡ Test #12 ⇒  goenv -file sample.env -has -env NEW_KEY
+andrei@goenv.git:. ⚡ Test #13 ⇒  goenv -file sample.env -write -add -env HOSTNAME -value 'another-host'
+andrei@goenv.git:. ⚡ Test #14 ⇒  goenv -file sample.env -is -env HOSTNAME -value localhost
+andrei@goenv.git:. ⚡ Test #15 ⇒  goenv -file sample.env -write -rm -env OUTPUT
+andrei@goenv.git:. ⚡ Test #16 ⇒  goenv -file sample.env -not -has -env OUTPUT
+andrei@goenv.git:. ⚡ Test #17 ⇒  goenv -file new.env -add -env HELLO -value world -write
+andrei@goenv.git:. ⚡ Test #18 ⇒  goenv -file new.env -is -env HELLO -value world
+andrei@goenv.git:. ⚡ Test #19 ⇒  goenv -file sample.env -v
 v0.0.2
-andrei@goenv.git:. ⚡ Test #20 ⇒  ./bin/goenv-darwin-arm64 -file non_existent_file.env -add -env FOO -value bar || echo "Test success because we expected an error here."                                                                                                      
-andrei@goenv.git:. ⚡ Test #21 ⇒  ./bin/goenv-darwin-arm64 -file non_existent_file.env -add -env FOO -value bar -write
+andrei@goenv.git:. ⚡ Test #20 ⇒  goenv -file non_existent_file.env -add -env FOO -value bar || echo "Test success because we expected an error here."                                                                                                      
+andrei@goenv.git:. ⚡ Test #21 ⇒  goenv -file non_existent_file.env -add -env FOO -value bar -write
 All 21 tests PASS!
 NEW: bin/goenv-darwin-amd64
 NEW: bin/goenv-darwin-arm64

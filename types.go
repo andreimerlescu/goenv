@@ -19,8 +19,11 @@ type (
 		Info fileInfo `json:"info" yaml:"info" toml:"info" xml:"info" ini:"info"`
 		Envs []string `json:"envs" yaml:"envs" toml:"envs" xml:"envs" ini:"envs"`
 
-		env, value                                                         string
-		is, not, has, printer, add, rm, write, prod, isProd, prodProtected bool
-		toJson, toYaml, toXml, toIni, toToml                               bool
+		env, value                           string
+		mkAll, init, printer                 bool
+		add, rm, write                       bool
+		is, not, has                         bool
+		prod, isProd, prodProtected          bool
+		toJson, toYaml, toXml, toIni, toToml bool
 	}
 )

@@ -11,6 +11,10 @@ import (
 	"github.com/andreimerlescu/goenv/env"
 )
 
+// Run is the primary goenv application
+//
+// Parameters:
+//   	figs: The CLI state of arguments and inputs to the runtime
 func Run(figs figtree.Plant) {
 	showVersion := *figs.Bool(argVersion)
 	if showVersion {
@@ -25,12 +29,22 @@ func Run(figs figtree.Plant) {
 
 		env:   *figs.String(argEnv),
 		value: *figs.String(argValue),
-		is:    *figs.Bool(argIs),
-		has:   *figs.Bool(argHas),
+
+		mkAll:   *figs.Bool(argMkAll),
+		init:    *figs.Bool(argInit),
+		printer: *figs.Bool(argPrint),
+
 		add:   *figs.Bool(argAdd),
 		rm:    *figs.Bool(argRm),
 		write: *figs.Bool(argWrite),
-		prod:  *figs.Bool(argProd),
+
+		is:  *figs.Bool(argIs),
+		has: *figs.Bool(argHas),
+		not: *figs.Bool(argNot),
+
+		prod:          *figs.Bool(argProd),
+		isProd:        strings.Contains(*figs.String(argEnvFile), "prod"),
+		prodProtected: strings.Contains(*figs.String(argEnvFile), "prod") == true,
 
 		toIni:  *figs.Bool(argIni),
 		toYaml: *figs.Bool(argYaml),
@@ -39,18 +53,22 @@ func Run(figs figtree.Plant) {
 		toToml: *figs.Bool(argToml),
 	}
 
-	if len(state.Path) == 0 && state.write {
+	if len(state.Path) == 0 && (state.write || state.init) {
 		// when no path is provided
 		if state.prod {
 			state.Path = ".env.production"
+			state.isProd = true
 		} else {
 			state.Path = ".env"
+			state.isProd = false
 		}
 	}
 	d, err := os.Stat(state.Path)
-	if os.IsNotExist(err) && !state.write {
-		_, _ = fmt.Fprintf(os.Stderr, "%s does not exists, use -write to create\n", state.Path)
-		os.Exit(1)
+	if os.IsNotExist(err) {
+		if !state.init && !state.write {
+			_, _ = fmt.Fprintf(os.Stderr, "%s does not exists, use -write to create\n", state.Path)
+			os.Exit(1)
+		}
 	}
 	if d != nil {
 		state.Info.Name = d.Name()
@@ -68,13 +86,49 @@ func Run(figs figtree.Plant) {
 	}
 	state.prodProtected = env.Bool(EnvNeverWriteProduction, state.isProd)
 
-	Sanity(figs, state)
+	if *figs.Bool(argCleanAll) {
+		for _, ext := range []string{outFormatJson, outFormatYaml, outFormatToml, outFormatXml, outFormatIni} {
+			ext := ext
+			err = nil
+			path := state.Path + ext
+			_, err = os.Stat(path)
+			if os.IsNotExist(err) {
+				continue
+			}
+			if os.IsPermission(err) {
+				_, _ = fmt.Fprintf(os.Stderr, "%s is not writable: %v\n", path, err)
+				continue
+			}
+			if err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "path %s err = %v\n", path, err)
+			} else {
+				if !env.Bool(AmGoEnvNeverDelete, !(state.write || state.rm)) {
+					err = os.Remove(path)
+					if err != nil {
+						_, _ = fmt.Fprintf(os.Stderr, "%s is not writable: %v\n", path, err)
+						os.Exit(1)
+					}
+				}
+				if !(state.write || state.rm) {
+					fmt.Printf("The -write flag can be used to remove %s\n", path)
+				}
+			}
+		}
+		os.Exit(0)
+	}
 
+	Sanity(figs, state)
+	triedWrite := false
 retry:
 	_, err = os.Lstat(state.Path)
 	if os.IsNotExist(err) {
-		_, _ = fmt.Fprintln(os.Stderr, err)
-		if state.write {
+		if state.init && !triedWrite {
+			if writeErr := os.WriteFile(state.Path, []byte{}, 0644); writeErr != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "-init failed with: %v", writeErr)
+				os.Exit(1)
+			}
+			os.Exit(0)
+		} else if state.write && !triedWrite {
 			var bb bytes.Buffer
 			bb.WriteString(state.env)
 			bb.WriteString("=")
@@ -84,7 +138,12 @@ retry:
 				_, _ = fmt.Fprintf(os.Stderr, "error writing %d bytes to %s due to %v", bb.Len(), state.Path, errors.Join(err, writeErr))
 				os.Exit(1)
 			}
+			triedWrite = true
 			goto retry
+		}
+		if !triedWrite {
+			_, _ = fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
 		}
 	}
 
@@ -100,7 +159,7 @@ retry:
 		os.Exit(1)
 	}
 
-	if size := len(contents); size == 0 {
+	if size := len(contents); size == 0 && !(state.init || state.write || state.add) {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %s %d bytes", state.Path, size)
 		os.Exit(1)
 	}
