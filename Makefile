@@ -15,7 +15,7 @@ $(BIN_DIR):
 	@mkdir -p $(BIN_DIR)
 
 # Build for all platforms
-all: summary darwin-amd64 darwin-arm64 linux-amd64 linux-arm64 windows-amd64 install
+all: darwin-amd64 darwin-arm64 linux-amd64 linux-arm64 windows-amd64 install
 
 summary:
 	@if ! command -v summarize > /dev/null; then \
@@ -32,27 +32,27 @@ install: $(BIN_DIR) $(shell go env GOOS)-$(shell go env GOARCH)
 	@echo "NEW: $(shell which $(APP_NAME))"
 
 # Build for macOS Intel (amd64)
-darwin-amd64: $(BIN_DIR) test summary
+darwin-amd64: $(BIN_DIR) test
 	@CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BIN_DIR)/$(APP_NAME)-darwin-amd64 $(MAIN_PATH)
 	@echo "NEW: $(BIN_DIR)/$(APP_NAME)-darwin-amd64"
 
 # Build for macOS Silicon (arm64)
-darwin-arm64: $(BIN_DIR) test summary
+darwin-arm64: $(BIN_DIR) test
 	@CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(BIN_DIR)/$(APP_NAME)-darwin-arm64 $(MAIN_PATH)
 	@echo "NEW: $(BIN_DIR)/$(APP_NAME)-darwin-arm64"
 
 # Build for Linux ARM64
-linux-arm64: $(BIN_DIR) test summary
+linux-arm64: $(BIN_DIR) test
 	@CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o $(BIN_DIR)/$(APP_NAME)-linux-arm64 $(MAIN_PATH)
 	@echo "NEW: $(BIN_DIR)/$(APP_NAME)-darwin-arm64"
 
 # Build for Linux AMD64
-linux-amd64: $(BIN_DIR) test summary
+linux-amd64: $(BIN_DIR) test
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BIN_DIR)/$(APP_NAME)-linux-amd64 $(MAIN_PATH)
 	@echo "NEW: $(BIN_DIR)/$(APP_NAME)-linux-amd64"
 
 # Build for Windows AMD64
-windows-amd64: $(BIN_DIR) test summary
+windows-amd64: $(BIN_DIR) test
 	@CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(BIN_DIR)/$(APP_NAME).exe $(MAIN_PATH)
 	@echo "NEW: $(BIN_DIR)/$(APP_NAME).exe"
 

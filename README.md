@@ -28,7 +28,15 @@ multiple formats. The [test.sh](test.sh) file has the summary of arguments that 
 
 ```sh
 go install github.com:andreimerlescu/goenv@latest
-goenv -has -env HOSTNAME || goenv -write -env HOSTNAME -value "$(hostname)" || { echo ERROR && exit 1; }
+goenv -init -write -file n8n.env
+goenv -write -file n8n.env -add -env DATA_FOLDER -value "$(pwd)"
+goenv -write -file n8n.env -add -env DOMAIN -value "gh.dev"
+goenv -write -file n8n.env -add -env SUBDOMAIN -value "n8n"
+goenv -write -file n8n.env -add -env SSL_EMAIL -value "webmaster@n8n.gh.dev"
+goenv -file n8n.env -print
+goenv -file n8n.env -xml
+goenv -file n8n.env -toml
+goenv -file n8n.env -has -env GENERIC_TIMEZONE
 ```
 
 ## Testing
