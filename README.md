@@ -1,4 +1,6 @@
 # Go ENV
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fandreimerlescu%2Fgoenv.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fandreimerlescu%2Fgoenv?ref=badge_shield)
+
 
 This utility is designed to allow you to let you interact with `.env` files in a manner consistent with `.env.local`, 
 `.env.develop`, `.env.production`, etc., and we have shorter hand notations for interacting with `.env` files. 
@@ -121,3 +123,6 @@ NEW: bin/goenv-darwin-arm64
 NEW: bin/goenv.exe
 NEW: /Users/andrei/go/bin/goenv
 ```
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fandreimerlescu%2Fgoenv.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fandreimerlescu%2Fgoenv?ref=badge_large)
