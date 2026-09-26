@@ -16,6 +16,12 @@ func init() {
 	OutLogger = log.New(os.Stdout, "INFO:"+packageName, LogFlags)
 	ErrLogger = log.New(os.Stderr, " ERR:"+packageName, LogFlags)
 
+	// Load the .env file (if it exists) before Magic so it can define AM_GO_ENV_* controls
+	EnvFile = String(AmGoEnvFile, DefaultEnvFile)
+	if UseEnvFile && !Bool(AmGoEnvNeverLoadFile, false) {
+		_ = LoadFile(EnvFile)
+	}
+
 	// Intentionally Use Import Side-Effects
 	if UseMagic {
 		Magic()

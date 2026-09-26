@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/andreimerlescu/checkfs"
 	"github.com/andreimerlescu/checkfs/file"
@@ -20,12 +21,21 @@ func NewConfiguration() figtree.Plant {
 
 	defaultConfigFile := filepath.Join(env.User().HomeDir, ".config", "goenv", "config.yml")
 	configFile := env.String("AM_GO_ENV_CONFIG_FILE", defaultConfigFile)
-	if err := checkfs.File(configFile, file.Options{Exists: true}); err != nil {
-		figtree.ConfigFilePath = defaultConfigFile
+	// only use goenv's own config file, never figtree's CONFIG_FILE env or ./config.yml defaults
+	figtree.EnvironmentKey = ""
+	figtree.ConfigFilePath = ""
+	if err := checkfs.File(configFile, file.Options{Exists: true}); err == nil {
 		love.ConfigFile = configFile
 	}
 
+	// figtree.With calls os.Clearenv() when IgnoreEnvironment is set, restore the environment afterwards
+	environ := os.Environ()
 	figs := figtree.With(love)
+	for _, kv := range environ {
+		if k, v, ok := strings.Cut(kv, "="); ok {
+			_ = os.Setenv(k, v)
+		}
+	}
 
 	figs = figs.NewString(argEnvFile, Initial(), "Path to env file to process")
 	figs = figs.NewString(argEnv, "", "Check for an environment variable name")

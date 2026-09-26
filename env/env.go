@@ -251,7 +251,7 @@ func UnitDuration(env string, fallback, unit time.Duration) time.Duration {
 	}
 	// First, try to parse as a full duration string (e.g., "1h30m"). If so, the unit is ignored.
 	if d, err := time.ParseDuration(v); err == nil {
-		return d * unit
+		return d
 	}
 	// If not, parse as a number and apply the unit.
 	vf, err := strconv.ParseInt(v, UnitDurationBase, UnitDurationBitSize)
