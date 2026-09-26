@@ -58,4 +58,13 @@ const (
 
 	// AmGoEnvPanicNoUser allows you to panic() when user.Current() returns an error
 	AmGoEnvPanicNoUser string = "AM_GO_ENV_PANIC_NO_USER"
+
+	// AmGoEnvFile allows you to define the path of the .env file loaded on import. Default is "./.env"
+	AmGoEnvFile string = "AM_GO_ENV_FILE"
+
+	// AmGoEnvNeverLoadFile allows you to disable loading the .env file on import. Default is "false"
+	AmGoEnvNeverLoadFile string = "AM_GO_ENV_NEVER_LOAD_FILE"
+
+	// DefaultEnvFile is the default path of the .env file loaded on import
+	DefaultEnvFile string = "./.env"
 )

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/andreimerlescu/env"
+	"github.com/andreimerlescu/goenv/env"
 )
 
 // withEnv is a helper to temporarily set an environment variable for a test.

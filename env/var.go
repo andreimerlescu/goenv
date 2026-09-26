@@ -9,6 +9,12 @@ import (
 var (
 	UseMagic bool = true
 
+	// UseEnvFile controls whether the EnvFile is loaded into the environment on import (when it exists)
+	UseEnvFile bool = true
+
+	// EnvFile is the path of the .env file loaded on import, override with AM_GO_ENV_FILE. Default is "./.env"
+	EnvFile string = DefaultEnvFile
+
 	// UseLogger controls whether or not the env package will use OutLogger or ErrLogger to report problems
 	UseLogger bool
 

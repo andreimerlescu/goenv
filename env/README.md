@@ -46,6 +46,38 @@ func main() {
 }
 ```
 
+## `.env` File Support
+
+When the package is imported, it will read `./.env` (if it exists) and load its variables into the runtime
+environment **before** any `env.*` lookups happen. Variables already defined in the environment are never
+overwritten by the file, so the shell always wins. Because the file is loaded before the package's own
+`AM_GO_ENV_*` controls are read, you can also place those controls inside `.env`.
+
+```sh
+# .env
+# comments and blank lines are ignored
+HOSTNAME=localhost
+export PORT=3306
+GREETING="hello\nworld"   # double quotes support \n \t \r \" \\ escapes
+LITERAL='no $escapes here'
+TAGS=a,b,c # inline comments are stripped from unquoted values
+```
+
+| **Environment Variable**    | **Default** | **Usage**                                           |
+|-----------------------------|-------------|-----------------------------------------------------|
+| `AM_GO_ENV_FILE`            | `./.env`    | Path of the `.env` file loaded on import.           |
+| `AM_GO_ENV_NEVER_LOAD_FILE` | `false`     | Set to `true` to skip loading the `.env` on import. |
+
+You can also work with `.env` files directly:
+
+```go
+_ = env.LoadFile("")                    // load env.EnvFile (default ./.env), keep existing values
+_ = env.LoadFile(".env.local")          // load another file, keep existing values
+_ = env.OverloadFile(".env.local")      // load another file, overwrite existing values
+vars, err := env.ReadFile(".env")       // parse into map[string]string without touching the environment
+vars, err = env.Parse(strings.NewReader("KEY=value"))
+```
+
 ## Function List
 
 - **Can `panic()` with `export AM_GO_ENV_ALWAYS_ALLOW_PANIC=true`**
@@ -62,6 +94,11 @@ func main() {
     - `func UnitDuration(env string, fallback, unit time.Duration) time.Duration`
     - `func List(env string, fallback []string) []string`
     - `func Map(env string, fallback map[string]string) map[string]string`
+- **`.env` Files**
+    - `func LoadFile(path string) error`
+    - `func OverloadFile(path string) error`
+    - `func ReadFile(path string) (map[string]string, error)`
+    - `func Parse(r io.Reader) (map[string]string, error)`
 - **Data Control**
     - `func Unset(env string)`
     - `func ListLength(env string, fallback []string) int`

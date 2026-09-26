@@ -17,6 +17,10 @@ The basis behind `env` is the `env` package, which can be used in other Go appli
 go get -u github.com/andreimerlescu/goenv/env
 ```
 
+When imported, the `env` package automatically loads `./.env` (if it exists) into the runtime environment without
+overwriting variables that are already set. Use `AM_GO_ENV_FILE` to point at a different file, or
+`AM_GO_ENV_NEVER_LOAD_FILE=true` to disable it.
+
 The [README.md](/env/README.md) has more information about using the package.
 
 ## Usage
